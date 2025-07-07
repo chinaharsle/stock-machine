@@ -13,5 +13,31 @@ export function LogoutButton() {
     router.push("/auth/login");
   };
 
-  return <Button onClick={logout}>Logout</Button>;
+  return (
+    <button 
+      onClick={logout}
+      className="logout-btn"
+      style={{
+        background: '#E4600A',
+        color: '#FFFFFF',
+        border: 'none',
+        padding: '0.5rem 1rem',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        transition: 'all 0.3s ease',
+        fontSize: '0.9rem'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = '#d55309';
+        e.currentTarget.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = '#E4600A';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
+    >
+      退出登录
+    </button>
+  );
 }
