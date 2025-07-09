@@ -206,7 +206,7 @@ export default function BannerPage() {
           </div>
         </div>
         <div className="table-body">
-          {banners.map((banner, index) => (
+          {banners.map((banner) => (
             <div key={banner.id} className="table-row">
               <div className="table-cell">
                 <div className="order-controls">

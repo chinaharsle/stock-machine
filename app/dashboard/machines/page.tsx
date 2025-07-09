@@ -150,7 +150,7 @@ export default function MachinesPage() {
       } else {
         showNotification(result.error || '保存机器失败', 'error');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving machine:', error);
       showNotification('保存机器失败', 'error');
     }
@@ -486,7 +486,7 @@ function MachineForm({
     setMediaLibraryOpen(true);
   };
 
-  const handleMediaSelect = (file: any) => {
+  const handleMediaSelect = (file: { url: string; name: string }) => {
     if (mediaLibraryType === 'image') {
       setFormData(prev => ({
         ...prev,

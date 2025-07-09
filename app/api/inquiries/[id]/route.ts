@@ -3,11 +3,11 @@ import { updateInquiryStatus, deleteInquiry } from '@/lib/supabase/inquiries';
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { status } = await request.json();
-    const inquiryId = context.params.id;
+    const { id: inquiryId } = await context.params;
 
     if (!inquiryId || inquiryId.trim() === '') {
       return NextResponse.json(
@@ -37,10 +37,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const inquiryId = context.params.id;
+    const { id: inquiryId } = await context.params;
 
     if (!inquiryId || inquiryId.trim() === '') {
       return NextResponse.json(

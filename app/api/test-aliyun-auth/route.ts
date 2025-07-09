@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const email = process.env.SMTP_USER;
     const password = process.env.SMTP_PASS;
@@ -56,14 +56,14 @@ export async function POST(request: NextRequest) {
         console.log(`✅ ${config.name} 认证成功!`);
         break; // 找到成功的配置就停止测试
 
-      } catch (error: any) {
-        console.log(`❌ ${config.name} 认证失败: ${error.message}`);
+      } catch (error: unknown) {
+        console.log(`❌ ${config.name} 认证失败: ${error instanceof Error ? error.message : String(error)}`);
         results.push({
           name: config.name,
           user: config.auth.user,
           success: false,
-          error: error.message,
-          code: error.code
+          error: error instanceof Error ? error.message : String(error),
+          code: error instanceof Error && 'code' in error ? error.code : undefined
         });
       }
     }
@@ -77,11 +77,11 @@ export async function POST(request: NextRequest) {
         '所有认证方式都失败，请检查密码或联系邮箱管理员'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('测试失败:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 } 

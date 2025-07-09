@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { moveMachinePosition, reorderMachines, updateMachineSortOrder } from '@/lib/supabase/machines-admin';
+import { moveMachinePosition, updateMachineSortOrder } from '@/lib/supabase/machines-admin';
 import { createClient } from '@/lib/supabase/server';
 
 // POST: 移动机器位置（上移/下移）

@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       if (machinesWithAttachments) {
         machinesWithAttachments.forEach(machine => {
           if (machine.attachments && Array.isArray(machine.attachments)) {
-            machine.attachments.forEach((attachment: any) => {
+            machine.attachments.forEach((attachment: { url: string; name: string }) => {
               mediaFiles.push({
                 id: `att_${Date.now()}_${Math.random()}`,
                 url: attachment.url,

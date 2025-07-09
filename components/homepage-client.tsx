@@ -241,8 +241,6 @@ export function HomepageClient({ }: HomepageClientProps) {
             'https://httpbin.org/ip'
           ];
           
-          let ipData = null;
-          
           for (const apiUrl of ipAPIs) {
             try {
               const ipResponse = await fetch(apiUrl);
@@ -261,15 +259,15 @@ export function HomepageClient({ }: HomepageClientProps) {
                 // httpbin.org不提供国家信息，继续尝试下一个API
                 continue;
               }
-            } catch (error) {
+            } catch {
               console.log(`Failed to fetch from ${apiUrl}, trying next...`);
               continue;
             }
           }
           
           console.log('IP Info collected:', { ipAddress, country });
-        } catch (ipError) {
-          console.error('Error getting IP info:', ipError);
+        } catch {
+          console.error('Error getting IP info:');
           // 继续提交，即使IP获取失败
         }
 

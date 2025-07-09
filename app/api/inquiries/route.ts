@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       };
 
       // 尝试插入完整数据
-      const { data: fullData, error: fullError } = await supabase
+      const { error: fullError } = await supabase
         .from('inquiries')
         .insert([testInsert])
         .select();
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       if (fullError) {
         // 如果失败，回退到基本数据
         console.log('IP/Country fields not available, using basic data');
-        const { data: basicData, error: basicError } = await supabase
+        const { error: basicError } = await supabase
           .from('inquiries')
           .insert([insertData])
           .select();

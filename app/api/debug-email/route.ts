@@ -76,14 +76,14 @@ export async function POST(request: NextRequest) {
             secure: port === 465
           }
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('邮件连接失败详细信息:', error);
         
         return NextResponse.json({
           success: false,
           message: '邮件服务器连接失败',
-          error: error.message,
-          code: error.code,
+          error: error instanceof Error ? error.message : String(error),
+          code: error instanceof Error && 'code' in error ? error.code : undefined,
           details: {
             host,
             port,
@@ -167,14 +167,14 @@ HARSLE 邮件功能测试
           accepted: info.accepted || [],
           rejected: info.rejected || []
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('测试邮件发送失败:', error);
         
         return NextResponse.json({
           success: false,
           message: '测试邮件发送失败',
-          error: error.message,
-          code: error.code
+          error: error instanceof Error ? error.message : String(error),
+          code: error instanceof Error && 'code' in error ? error.code : undefined
         });
       }
     }
@@ -200,22 +200,22 @@ HARSLE 邮件功能测试
           message: success ? '询盘邮件发送成功' : '询盘邮件发送失败',
           testData: testInquiry
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('询盘邮件发送失败:', error);
         
         return NextResponse.json({
           success: false,
           message: '询盘邮件发送失败',
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }
 
     return NextResponse.json({ error: '无效的操作' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('调试API错误:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

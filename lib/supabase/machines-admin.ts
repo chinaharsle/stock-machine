@@ -31,15 +31,16 @@ function createAdminClient() {
 /**
  * Helper function to safely log errors
  */
-function logError(context: string, error: any) {
+function logError(context: string, error: unknown) {
+  const errorObj = error as Record<string, unknown>;
   console.error(`Error in ${context}:`, {
     fullError: error,
-    code: error?.code || 'N/A',
-    message: error?.message || 'N/A',
-    details: error?.details || 'N/A',
-    hint: error?.hint || 'N/A',
-    status: error?.status || 'N/A',
-    statusCode: error?.statusCode || 'N/A'
+    code: errorObj?.code || 'N/A',
+    message: errorObj?.message || 'N/A',
+    details: errorObj?.details || 'N/A',
+    hint: errorObj?.hint || 'N/A',
+    status: errorObj?.status || 'N/A',
+    statusCode: errorObj?.statusCode || 'N/A'
   });
 }
 
