@@ -213,12 +213,183 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (action === 'test-resend') {
+      // 测试Resend SMTP配置
+      console.log('📧 [Vercel] 测试Resend SMTP连接...');
+      
+      // 检查是否已配置Resend
+      const isResendConfigured = 
+        process.env.SMTP_HOST === 'smtp.resend.com' &&
+        process.env.SMTP_USER === 'resend' &&
+        process.env.SMTP_PASS?.startsWith('re_');
+
+      if (!isResendConfigured) {
+        return NextResponse.json({
+          success: false,
+          message: 'Resend配置检查失败',
+          issues: {
+            host: process.env.SMTP_HOST !== 'smtp.resend.com' ? 'SMTP_HOST应设置为smtp.resend.com' : null,
+            user: process.env.SMTP_USER !== 'resend' ? 'SMTP_USER应设置为resend' : null,
+            apiKey: !process.env.SMTP_PASS?.startsWith('re_') ? 'SMTP_PASS应设置为Resend API Key（以re_开头）' : null
+          },
+          current: {
+            SMTP_HOST: process.env.SMTP_HOST || '未设置',
+            SMTP_USER: process.env.SMTP_USER || '未设置',
+            SMTP_PASS: process.env.SMTP_PASS ? 
+              (process.env.SMTP_PASS.startsWith('re_') ? '✅ Resend API Key' : '❌ 非Resend API Key') : 
+              '未设置'
+          },
+          instructions: [
+            '1. 访问 https://resend.com 注册账户',
+            '2. 创建API Key，复制以re_开头的密钥',
+            '3. 在Vercel环境变量中设置：',
+            '   SMTP_HOST=smtp.resend.com',
+            '   SMTP_PORT=587',
+            '   SMTP_USER=resend',
+            '   SMTP_PASS=your-resend-api-key',
+            '4. 重新部署应用'
+          ]
+        });
+      }
+
+      try {
+        // 使用Resend特定配置进行测试
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.resend.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'resend',
+            pass: process.env.SMTP_PASS
+          },
+          // Resend特定配置
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          debug: true,
+          logger: true
+        });
+
+        console.log('🔗 [Vercel] 连接Resend SMTP服务器...');
+        const start = Date.now();
+        await transporter.verify();
+        const duration = Date.now() - start;
+        console.log(`✅ [Vercel] Resend SMTP连接成功，耗时: ${duration}ms`);
+
+        // 发送测试邮件
+        const testResult = await transporter.sendMail({
+          from: 'HARSLE <onboarding@resend.dev>', // 使用Resend的测试域名
+          to: process.env.NOTIFICATION_EMAIL || 'test@example.com',
+          subject: '🎉 Resend邮件测试 - HARSLE',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #2563eb;">🎉 Resend邮件服务测试成功！</h2>
+              <p>恭喜！您的Vercel应用已成功配置Resend邮件服务。</p>
+              
+              <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+                <h3>✅ 配置信息:</h3>
+                <ul>
+                  <li><strong>服务商:</strong> Resend</li>
+                  <li><strong>SMTP服务器:</strong> smtp.resend.com</li>
+                  <li><strong>端口:</strong> 587</li>
+                  <li><strong>发送时间:</strong> ${new Date().toLocaleString('zh-CN')}</li>
+                  <li><strong>Vercel区域:</strong> ${process.env.VERCEL_REGION || 'unknown'}</li>
+                </ul>
+              </div>
+              
+              <p style="color: #059669;">现在您的询盘邮件将通过Resend可靠地发送！</p>
+              
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+              <p style="font-size: 12px; color: #6b7280;">
+                此邮件由HARSLE股权分析机平台自动发送 | Powered by Resend
+              </p>
+            </div>
+          `,
+          text: `
+Resend邮件服务测试成功！
+
+配置信息:
+- 服务商: Resend  
+- SMTP服务器: smtp.resend.com
+- 端口: 587
+- 发送时间: ${new Date().toLocaleString('zh-CN')}
+- Vercel区域: ${process.env.VERCEL_REGION || 'unknown'}
+
+现在您的询盘邮件将通过Resend可靠地发送！
+          `
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Resend配置测试成功',
+          connection: {
+            host: 'smtp.resend.com',
+            port: 587,
+            connectionTime: `${duration}ms`,
+            vercelRegion: process.env.VERCEL_REGION
+          },
+          email: {
+            messageId: testResult.messageId,
+            accepted: testResult.accepted,
+            rejected: testResult.rejected,
+            response: testResult.response
+          },
+          note: '测试邮件已发送，请检查收件箱'
+        });
+
+      } catch (error) {
+        const resendError = error as NodemailerError;
+        console.error('❌ [Vercel] Resend测试失败:', resendError);
+        
+        return NextResponse.json({
+          success: false,
+          message: 'Resend配置测试失败',
+          error: resendError.message,
+          code: resendError.code,
+          troubleshooting: [
+            '1. 确认API Key正确（以re_开头）',
+            '2. 检查API Key是否有发送权限',
+            '3. 确认从邮箱地址已验证',
+            '4. 查看Resend Dashboard的发送日志'
+          ]
+        });
+      }
+    }
+
     if (action === 'test-alternatives') {
       // 提供备用方案
       return NextResponse.json({
         success: true,
         message: '邮件服务备用方案',
         alternatives: {
+          resend: {
+            title: 'Resend (推荐)',
+            description: 'Vercel官方推荐的现代化邮件API服务',
+            config: {
+              SMTP_HOST: 'smtp.resend.com',
+              SMTP_PORT: '587',
+              SMTP_USER: 'resend',
+              SMTP_PASS: 'your-resend-api-key'
+            },
+            advantages: [
+              'Vercel官方推荐，完美集成',
+              '现代化API设计，开发者友好',
+              '优秀的送达率和可靠性',
+              '免费额度：每月3000封邮件',
+              '支持域名验证和DKIM',
+              '详细的发送统计和日志'
+            ],
+            setup: [
+              '1. 访问 resend.com 注册账户',
+              '2. 创建API Key（格式：re_xxxxxxxxx）',
+              '3. 在Vercel环境变量中配置：',
+              '   SMTP_HOST=smtp.resend.com',
+              '   SMTP_PORT=587',
+              '   SMTP_USER=resend',
+              '   SMTP_PASS=your-resend-api-key',
+              '4. 重新部署应用'
+            ]
+          },
           gmail: {
             title: 'Gmail SMTP',
             description: '使用Gmail作为SMTP服务器',
@@ -250,24 +421,9 @@ export async function POST(request: NextRequest) {
               '详细的发送统计',
               '免费额度：每月100封'
             ]
-          },
-          resend: {
-            title: 'Resend',
-            description: '现代化邮件API服务',
-            config: {
-              SMTP_HOST: 'smtp.resend.com',
-              SMTP_PORT: '587',
-              SMTP_USER: 'resend',
-              SMTP_PASS: 'your-resend-api-key'
-            },
-            advantages: [
-              '开发者友好',
-              'Vercel官方推荐',
-              '优秀的送达率',
-              '免费额度：每月3000封'
-            ]
           }
-        }
+        },
+        recommendation: 'Resend是当前最佳选择，特别适合Vercel部署的应用'
       });
     }
 

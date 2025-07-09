@@ -51,6 +51,12 @@ export default function VercelDebugPage() {
       color: 'bg-blue-500'
     },
     {
+      id: 'test-resend',
+      title: '测试Resend配置',
+      description: '专门测试Resend邮件服务的配置和连接',
+      color: 'bg-emerald-500'
+    },
+    {
       id: 'test-vercel-connection',
       title: '测试SMTP连接',
       description: '验证Vercel环境是否能连接到邮件服务器',

@@ -32,11 +32,11 @@ interface InquiryData {
 // 创建邮件传输器
 const createTransporter = () => {
   const config: EmailConfig = {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || 'smtp.resend.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
     auth: {
-      user: process.env.SMTP_USER || '',
+      user: process.env.SMTP_USER || 'resend',
       pass: process.env.SMTP_PASS || '',
     },
   };
@@ -68,6 +68,22 @@ const createTransporter = () => {
       maxConnections: 5,    // 最大连接数
       rateDelta: 20000,     // 速率限制间隔
       rateLimit: 5          // 速率限制
+    });
+  }
+
+  // Resend特定优化
+  if (process.env.SMTP_HOST === 'smtp.resend.com') {
+    console.log('📧 [Resend] 使用Resend专用配置');
+    Object.assign(transporterOptions, {
+      // Resend推荐的配置
+      name: 'harsle.com',     // 标识符
+      maxConnections: 10,     // Resend支持更多连接
+      rateDelta: 1000,        // 更短的速率限制间隔
+      rateLimit: 14,          // 每秒14封邮件（Resend限制）
+      // 优化的超时配置
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000
     });
   }
 
