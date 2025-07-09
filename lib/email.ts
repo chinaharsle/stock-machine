@@ -90,20 +90,39 @@ const createTransporter = () => {
   return nodemailer.createTransport(transporterOptions as Parameters<typeof nodemailer.createTransport>[0]);
 };
 
-// 获取产品参数信息
+// 获取产品参数信息 - 直接使用Supabase查询，避免HTTP调用
 const getProductSpecifications = async (productModel: string): Promise<ProductSpecifications | null> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/machines/by-model?model=${encodeURIComponent(productModel)}`);
+    // 导入Supabase客户端
+    const { createClient } = require('@supabase/supabase-js');
     
-    if (!response.ok) {
-      console.error('Failed to fetch product specifications:', response.status);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    console.log(`🔍 [getProductSpecifications] 查询产品参数: ${productModel}`);
+
+    const { data, error } = await supabase
+      .from('machines')
+      .select('model, specifications')
+      .eq('model', productModel)
+      .single();
+
+    if (error) {
+      console.error('❌ [getProductSpecifications] 数据库查询失败:', error);
       return null;
     }
-    
-    const data = await response.json();
-    return data.success ? data.data.specifications : null;
+
+    if (!data || !data.specifications) {
+      console.log(`⚠️ [getProductSpecifications] 产品 ${productModel} 没有找到或没有参数`);
+      return null;
+    }
+
+    console.log(`✅ [getProductSpecifications] 获取到产品参数:`, data.specifications);
+    return data.specifications;
   } catch (error) {
-    console.error('Error fetching product specifications:', error);
+    console.error('❌ [getProductSpecifications] 获取产品参数失败:', error);
     return null;
   }
 };
