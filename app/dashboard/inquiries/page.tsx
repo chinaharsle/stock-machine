@@ -329,7 +329,7 @@ export default function InquiriesPage() {
                     <span>{selectedInquiry.email}</span>
                   </div>
                   <div className="detail-item">
-                    <label><strong>电话:</strong></label>
+                    <label><strong>WhatsApp:</strong></label>
                     <span>{selectedInquiry.phone}</span>
                   </div>
                   <div className="detail-item">

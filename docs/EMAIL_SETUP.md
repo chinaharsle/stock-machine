@@ -46,7 +46,7 @@ supabase functions deploy send-inquiry-email
 
 ## 邮件内容
 邮件将包含以下信息：
-- 客户基本信息（姓名、邮箱、电话、公司）
+- 客户基本信息（姓名、邮箱、WhatsApp、公司）
 - 客户IP地址和来源国家
 - 询盘的产品型号
 - 询盘消息内容

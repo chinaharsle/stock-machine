@@ -51,6 +51,10 @@ export async function updateSession(request: NextRequest) {
     "/auth",
     "/login",
     "/api/inquiries",
+    "/api/test-email",
+    "/api/debug-email",
+    "/api/test-aliyun-auth",
+    "/api/machines",
   ];
 
   // Check if the current path is public

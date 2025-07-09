@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendInquiryNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,10 +85,28 @@ export async function POST(request: NextRequest) {
       country: inquiryData.country
     });
 
-    // 保存逻辑已经在上面的try-catch块中处理了
+    // 发送邮件通知（使用真实的邮件发送功能）
+    try {
+      const emailSent = await sendInquiryNotification({
+        fullName: inquiryData.fullName,
+        email: inquiryData.email,
+        phone: inquiryData.phone,
+        company: inquiryData.company,
+        message: inquiryData.message,
+        productModel: inquiryData.productModel,
+        ipAddress: inquiryData.ipAddress || serverIp,
+        country: inquiryData.country
+      });
 
-    // 发送邮件通知（简化版本）
-    await sendEmailNotification(inquiryData);
+      if (emailSent) {
+        console.log('询盘通知邮件发送成功');
+      } else {
+        console.log('询盘通知邮件发送失败，但询盘已保存');
+      }
+    } catch (emailError) {
+      console.error('邮件发送异常:', emailError);
+      // 邮件发送失败不影响询盘提交
+    }
 
     return NextResponse.json({
       success: true,
@@ -101,28 +120,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-async function sendEmailNotification(inquiryData: {
-  fullName: string;
-  email: string;
-  phone: string;
-  company?: string;
-  message: string;
-  productModel?: string;
-  ipAddress?: string;
-  country?: string;
-}) {
-  // 这里可以添加邮件发送逻辑
-  // 暂时只记录到控制台
-  console.log('New inquiry received:', {
-    fullName: inquiryData.fullName,
-    email: inquiryData.email,
-    phone: inquiryData.phone,
-    company: inquiryData.company,
-    message: inquiryData.message,
-    productModel: inquiryData.productModel,
-    ipAddress: inquiryData.ipAddress,
-    country: inquiryData.country
-  });
 } 
