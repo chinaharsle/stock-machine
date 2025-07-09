@@ -93,8 +93,8 @@ const createTransporter = () => {
 // 获取产品参数信息 - 直接使用Supabase查询，避免HTTP调用
 const getProductSpecifications = async (productModel: string): Promise<ProductSpecifications | null> => {
   try {
-    // 导入Supabase客户端
-    const { createClient } = require('@supabase/supabase-js');
+    // 动态导入Supabase客户端
+    const { createClient } = await import('@supabase/supabase-js');
     
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
