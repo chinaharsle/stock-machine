@@ -2,9 +2,14 @@ import "./homepage.css";
 import { HomepageClient } from "@/components/homepage-client";
 import { MachineCard } from "@/components/machine-card";
 import { getPublicMachines, formatProductionDate } from "@/lib/supabase/machines-server";
+import { getActiveBanners } from "@/lib/supabase/banners-server";
+
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const machinesFromDb = await getPublicMachines();
+  const bannersFromDb = await getActiveBanners();
   
   // Transform data to match expected interface
   const machinesData = machinesFromDb.map(machine => ({
@@ -23,33 +28,42 @@ export default async function Home() {
       <header className="hero-section">
         <div className="hero-content">
           <div className="hero-slides">
-            <div className="hero-slide active">
-              <div className="hero-bg slide-bg-1"></div>
-              <div className="hero-text">
-                <h1>HARSLE Inventory Machines</h1>
-                <p>Professional Press Brake Solutions Ready For Delivery</p>
+            {bannersFromDb.length > 0 ? (
+              bannersFromDb.map((banner, index) => (
+                <div key={banner.id} className={`hero-slide ${index === 0 ? 'active' : ''}`}>
+                  <div 
+                    className={`hero-bg ${banner.background_style}`}
+                    style={banner.background_image_url ? {
+                      backgroundImage: `url(${banner.background_image_url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    } : undefined}
+                  ></div>
+                  <div className="hero-text">
+                    <h1>{banner.title}</h1>
+                    {banner.subtitle && <p>{banner.subtitle}</p>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              /* Fallback banner when no banners are available */
+              <div className="hero-slide active">
+                <div className="hero-bg slide-bg-1"></div>
+                <div className="hero-text">
+                  <h1>HARSLE Inventory Machines</h1>
+                  <p>Professional Press Brake Solutions Ready For Delivery</p>
+                </div>
               </div>
-            </div>
-            <div className="hero-slide">
-              <div className="hero-bg slide-bg-2"></div>
-              <div className="hero-text">
-                <h1>Advanced Manufacturing Excellence</h1>
-                <p>Cutting-Edge Industrial Equipment for Modern Production</p>
-              </div>
-            </div>
-            <div className="hero-slide">
-              <div className="hero-bg slide-bg-3"></div>
-              <div className="hero-text">
-                <h1>Precision Engineering Solutions</h1>
-                <p>High-Performance Bending Machines for Superior Results</p>
-              </div>
-            </div>
+            )}
           </div>
-          <div className="slide-indicators">
-            <span className="indicator active" data-slide="0"></span>
-            <span className="indicator" data-slide="1"></span>
-            <span className="indicator" data-slide="2"></span>
-          </div>
+          {/* 只有当横幅数量大于1时才显示导航点 */}
+          {bannersFromDb.length > 1 && (
+            <div className="slide-indicators">
+              {bannersFromDb.map((_, index) => (
+                <span key={index} className={`indicator ${index === 0 ? 'active' : ''}`} data-slide={index.toString()}></span>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 

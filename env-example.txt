@@ -1,0 +1,47 @@
+# HARSLE Stock Machine - 邮件配置示例
+# 复制以下内容到 .env.local 文件并填入你的真实配置
+
+# Supabase 配置 (必须)
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# 邮件服务配置 (选择一个配置即可)
+
+# 1. Resend 配置 (推荐)
+# SMTP_HOST=smtp.resend.com
+# SMTP_PORT=587
+# SMTP_USER=resend
+# SMTP_PASS=re_xxxxxxxxxxxxxxxxxxxxxxxxxx
+# SMTP_FROM=noreply@yourdomain.com
+# SMTP_FROM_NAME=HARSLE Stock Machine
+
+# 2. Gmail 配置
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# SMTP_FROM=your-email@gmail.com
+# SMTP_FROM_NAME=HARSLE Stock Machine
+
+# 3. 腾讯企业邮箱配置
+# SMTP_HOST=smtp.exmail.qq.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@yourcompany.com
+# SMTP_PASS=your-password
+# SMTP_FROM=your-email@yourcompany.com
+# SMTP_FROM_NAME=HARSLE Stock Machine
+
+# 4. QQ邮箱配置
+# SMTP_HOST=smtp.qq.com
+# SMTP_PORT=587
+# SMTP_USER=your-qq-number@qq.com
+# SMTP_PASS=your-authorization-code
+# SMTP_FROM=your-qq-number@qq.com
+# SMTP_FROM_NAME=HARSLE Stock Machine
+
+# 通知邮箱 (必须配置)
+NOTIFICATION_EMAIL=admin@harsle.com
+
+# 其他配置
+NEXT_PUBLIC_SITE_URL=http://localhost:3000 
