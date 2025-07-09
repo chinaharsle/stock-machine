@@ -1,24 +1,24 @@
 import "./homepage.css";
-import { AuthButton } from "@/components/auth-button";
 import { HomepageClient } from "@/components/homepage-client";
-import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
+import { MachineCard } from "@/components/machine-card";
+import { getPublicMachines, formatProductionDate } from "@/lib/supabase/machines-server";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const machinesFromDb = await getPublicMachines();
+  
+  // Transform data to match expected interface
+  const machinesData = machinesFromDb.map(machine => ({
+    id: parseInt(machine.id.substring(0, 8), 16), // Convert UUID to number for compatibility
+    model: machine.model,
+    stock: machine.stock,
+    productionDate: formatProductionDate(machine.production_date),
+    images: machine.image_urls,
+    specifications: machine.specifications,
+    toolingDrawing: machine.tooling_drawing_url || ''
+  }));
 
   return (
-    <div className="homepage">
-      {/* Admin Button for authenticated users */}
-      {user && (
-        <div className="top-admin">
-          <Link href="/dashboard" className="admin-btn">
-            管理后台
-          </Link>
-        </div>
-      )}
-
+    <div>
       {/* Header Banner with Auto Rotation */}
       <header className="hero-section">
         <div className="hero-content">
@@ -53,24 +53,16 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Navigation Bar */}
-      <nav className="main-nav">
-        <div className="nav-container">
-          <div className="nav-brand">
-            <Link href="/">HARSLE</Link>
-          </div>
-          <div className="nav-actions">
-            <AuthButton />
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <main className="main-content">
         <div className="container">
           <div className="machines-grid" id="machinesGrid">
-            {/* Machine cards will be dynamically loaded here */}
-            <div className="loading">正在加载机器数据...</div>
+            {machinesData.map((machine) => (
+              <MachineCard
+                key={machine.id}
+                machine={machine}
+              />
+            ))}
           </div>
         </div>
       </main>
@@ -79,7 +71,9 @@ export default async function Home() {
       <footer className="company-footer">
         <div className="container">
           <div className="footer-bottom">
-            <p>&copy; 2024 HARSLE. All rights reserved. | Professional Press Brake Manufacturing Excellence</p>
+            <div className="footer-bottom-content">
+              <p>&copy; 2025 <a href="https://www.harsle.com" target="_blank" rel="noopener noreferrer" className="footer-link">HARSLE</a>. All rights reserved.</p>
+            </div>
           </div>
         </div>
       </footer>
@@ -88,6 +82,58 @@ export default async function Home() {
       <button id="backToTop" className="back-to-top" title="Back to Top">
         ⬆️
       </button>
+
+      {/* Quote Modal */}
+      <div id="quoteModal" className="modal">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h2>Request Quote</h2>
+            <span className="close">&times;</span>
+          </div>
+          <form id="quoteForm" className="quote-form">
+            <div className="quote-product-info" id="quoteProductInfo" style={{display: 'none'}}>
+              <h4>Product Information</h4>
+              <div id="productDisplayInfo"></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="fullName">Full Name *</label>
+                <input type="text" id="fullName" name="fullName" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="phone">WhatsApp Number *</label>
+                <input type="tel" id="phone" name="phone" required placeholder="+1234567890" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label htmlFor="email">Email Address *</label>
+              <input type="email" id="email" name="email" required />
+            </div>
+            <div className="form-group">
+              <label htmlFor="company">Company Name</label>
+              <input type="text" id="company" name="company" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="message">Message *</label>
+              <textarea id="message" name="message" rows={3} required placeholder="Please describe your specific requirements..."></textarea>
+            </div>
+            <input type="hidden" id="productModel" name="productModel" />
+            <button type="submit" className="submit-btn">Submit</button>
+          </form>
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      <div id="imageModal" className="modal image-modal">
+        <div className="modal-content image-modal-content">
+          <span className="close">&times;</span>
+          <img id="modalImage" src={undefined} alt="" />
+          <div className="image-nav">
+            <button id="prevImage" className="nav-btn">‹</button>
+            <button id="nextImage" className="nav-btn">›</button>
+          </div>
+        </div>
+      </div>
 
       {/* Client-side functionality */}
       <HomepageClient />
