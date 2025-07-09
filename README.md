@@ -1,105 +1,189 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# HARSLE Stock Machine Management System
 
 <p align="center">
- The fastest way to build apps with Next.js and Supabase
+  <strong>Professional Industrial Equipment Inventory Management System</strong>
 </p>
 
 <p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
+  A comprehensive web application for managing press brake and sheet metal equipment inventory with customer inquiry management.
 </p>
-<br/>
 
-## Features
+## 🚀 Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### Frontend (Public Website)
+- **Product Showcase**: Browse available press brake machines with detailed specifications
+- **Interactive Image Gallery**: View product images with zoom functionality and navigation
+- **Smart Inquiry System**: Submit product inquiries with automatic IP geolocation
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Real-time Toast Notifications**: Enhanced user feedback with confetti effects
+- **Product Specifications Display**: Detailed technical parameters for each machine
 
-## Demo
+### Backend (Admin Dashboard)
+- **Secure Authentication**: Role-based access control for administrators
+- **Machine Management**: Add, edit, and organize inventory with custom specifications
+- **Inquiry Management**: Handle customer inquiries with status tracking and product parameter integration
+- **Geographic Analytics**: Track inquiry sources with IP address and country detection
+- **Banner Management**: Control homepage banners and promotional content
+- **User Administration**: Manage admin accounts and permissions
+- **Media Library**: Centralized file management for images and documents
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### Technical Features
+- **Modern Stack**: Built with Next.js 15, TypeScript, and Supabase
+- **Database Integration**: PostgreSQL with Row Level Security (RLS)
+- **File Storage**: Supabase Storage for images and documents
+- **API Architecture**: RESTful APIs with comprehensive error handling
+- **Security**: JWT authentication with server-side validation
+- **Performance**: Optimized images, caching, and lazy loading
 
-## Deploy to Vercel
+## 🛠 Technology Stack
 
-Vercel deployment will guide you through creating a Supabase account and project.
+- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: PostgreSQL (via Supabase)
+- **Authentication**: Supabase Auth with cookies
+- **Storage**: Supabase Storage
+- **Deployment**: Vercel-ready
+- **UI Components**: Custom components with shadcn/ui
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## 📦 Installation
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### Local Setup
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
-
-## Clone and run locally
-
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
+1. **Clone the repository**
    ```bash
-   npx create-next-app --example with-supabase with-supabase-app
+   git clone <repository-url>
+   cd stock-machine
    ```
 
+2. **Install dependencies**
    ```bash
-   yarn create next-app --example with-supabase with-supabase-app
+   npm install
    ```
 
+3. **Environment Setup**
+   
+   Rename `.env.example` to `.env.local` and configure:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
+
+4. **Database Setup**
+   
+   Run the initialization script in your Supabase SQL editor:
    ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
+   # Execute sql/init.sql in Supabase dashboard
    ```
-
-3. Use `cd` to change into the app's directory
-
+   
+   For IP address and country tracking, also run:
    ```bash
-   cd with-supabase-app
+   # Execute sql/add-ip-country-fields.sql
    ```
 
-4. Rename `.env.example` to `.env.local` and update the following:
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
-
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
+5. **Start Development Server**
    ```bash
    npm run dev
    ```
+   
+   The application will be available at `http://localhost:3000`
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+## 🗄 Database Schema
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+### Core Tables
+- **machines**: Product inventory with specifications and images
+- **inquiries**: Customer inquiries with contact information and IP tracking
+- **admin_users**: Administrator accounts with role management
+- **banners**: Homepage banner management
+- **inquiry_replies**: Admin responses to customer inquiries
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+### Key Features
+- UUID primary keys for security
+- Row Level Security (RLS) policies
+- JSONB specifications for flexible product data
+- Automatic timestamp tracking
+- Geographic IP tracking (with optional fields)
 
-## Feedback and issues
+## 🚀 Deployment
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+### Supabase Setup
+1. Create a new Supabase project
+2. Run the SQL initialization scripts
+3. Configure authentication settings
+4. Set up storage buckets for file uploads
 
-## More Supabase examples
+### Vercel Deployment
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables
+3. Deploy automatically on push
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+### Manual Deployment
+```bash
+npm run build
+npm start
+```
+
+## 📱 Usage
+
+### For Administrators
+1. **Access Admin Dashboard**: Navigate to `/auth/login`
+2. **Manage Inventory**: Add/edit machines with specifications and images
+3. **Handle Inquiries**: View, respond to, and track customer inquiries
+4. **Monitor Analytics**: Review inquiry sources and customer patterns
+
+### For Customers
+1. **Browse Products**: View available machines on the homepage
+2. **Request Quotes**: Submit inquiries for specific products
+3. **View Details**: Examine product specifications and images
+
+## 🔧 Configuration
+
+### Admin Setup
+1. Create your first admin user via Supabase Auth
+2. Update the admin_users table with your user ID
+3. Set `is_admin = true` for administrative access
+
+### Customization
+- **Product Categories**: Modify machine specifications in the database
+- **UI Themes**: Customize colors in CSS variables
+- **Email Integration**: Configure SMTP for inquiry notifications
+- **Geographic Services**: Update IP geolocation API endpoints
+
+## 📚 API Documentation
+
+### Public APIs
+- `GET /api/machines/by-model?model=<name>` - Get machine specifications
+- `POST /api/inquiries` - Submit customer inquiry
+
+### Admin APIs
+- `GET /api/inquiries/list` - List all inquiries with filtering
+- `PUT /api/inquiries/[id]` - Update inquiry status
+- `DELETE /api/inquiries/[id]` - Remove inquiry
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is proprietary software developed for HARSLE industrial equipment management.
+
+## 🆘 Support
+
+For technical support or questions:
+- Review the `DATABASE_UPDATE_INSTRUCTIONS.md` for database setup
+- Check the terminal logs for debugging information
+- Ensure all environment variables are properly configured
+
+---
+
+**Built with ❤️ for HARSLE industrial equipment management**
