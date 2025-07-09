@@ -375,41 +375,97 @@ export default function InquiriesPage() {
         ) : filteredInquiries.length === 0 ? (
           <div className="empty-state">暂无询盘数据</div>
         ) : (
-          <div className="inquiry-grid">
-            {filteredInquiries.map((inquiry) => (
-              <div key={inquiry.id} className="inquiry-card">
-                <div className="inquiry-header">
-                  <h3>{inquiry.fullName}</h3>
-                  <span className={`status-badge ${getStatusBadge(inquiry.status).class}`}>
-                    {getStatusBadge(inquiry.status).text}
-                  </span>
-                </div>
-                
-                <div className="inquiry-info">
-                  <p><strong>邮箱:</strong> {inquiry.email}</p>
-                  <p><strong>电话:</strong> {inquiry.phone}</p>
-                  <p><strong>公司:</strong> {inquiry.company}</p>
-                  <p><strong>国家:</strong> {inquiry.country}</p>
-                  <p><strong>产品型号:</strong> {inquiry.productModel}</p>
-                  <p><strong>提交时间:</strong> {new Date(inquiry.createdAt).toLocaleString()}</p>
-                </div>
-
-                <div className="inquiry-actions">
-                  <button 
-                    onClick={() => handleViewDetails(inquiry)}
-                    className="view-btn"
-                  >
-                    查看详情
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(inquiry.id)}
-                    className="delete-btn"
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="table-container">
+            <table className="inquiries-table">
+              <thead>
+                <tr>
+                  <th>客户信息</th>
+                  <th>联系方式</th>
+                  <th>公司</th>
+                  <th>产品型号</th>
+                  <th>状态</th>
+                  <th>提交时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInquiries.map((inquiry) => (
+                  <tr key={inquiry.id}>
+                    <td>
+                      <div className="customer-info">
+                        <div className="customer-name">{inquiry.fullName}</div>
+                        <div className="customer-country">{inquiry.country}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="contact-info">
+                        <div className="contact-email">
+                          <a href={`mailto:${inquiry.email}`} className="email-link">
+                            {inquiry.email}
+                          </a>
+                        </div>
+                        <div className="contact-phone">
+                          <a href={`tel:${inquiry.phone}`} className="phone-link">
+                            {inquiry.phone}
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="company-name">{inquiry.company || '-'}</div>
+                    </td>
+                    <td>
+                      <div className="product-model">
+                        {inquiry.productModel ? (
+                          <span className="product-badge">{inquiry.productModel}</span>
+                        ) : (
+                          '-'
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${getStatusBadge(inquiry.status).class}`}>
+                        {getStatusBadge(inquiry.status).text}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="datetime">
+                        {new Date(inquiry.createdAt).toLocaleDateString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
+                        <br />
+                        <span className="time">
+                          {new Date(inquiry.createdAt).toLocaleTimeString('zh-CN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <button 
+                          onClick={() => handleViewDetails(inquiry)}
+                          className="action-btn view"
+                          title="查看详情"
+                        >
+                          查看
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(inquiry.id)}
+                          className="action-btn delete"
+                          title="删除询盘"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
