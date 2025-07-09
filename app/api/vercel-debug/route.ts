@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { sendInquiryNotification } from '@/lib/email';
 
+// 定义错误类型
+interface NodemailerError extends Error {
+  code?: string;
+  command?: string;
+  responseCode?: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { action } = await request.json();
@@ -102,26 +109,27 @@ export async function POST(request: NextRequest) {
           }
         });
 
-      } catch (error: any) {
-        console.error('❌ [Vercel] SMTP连接失败:', error);
+      } catch (error) {
+        const nodemailerError = error as NodemailerError;
+        console.error('❌ [Vercel] SMTP连接失败:', nodemailerError);
         
         // 分析错误类型
         let errorType = 'unknown';
         let solution = '';
         
-        if (error.code === 'ECONNREFUSED') {
+        if (nodemailerError.code === 'ECONNREFUSED') {
           errorType = 'connection_refused';
           solution = '无法连接到SMTP服务器，可能是网络问题或服务器地址错误';
-        } else if (error.code === 'ENOTFOUND') {
+        } else if (nodemailerError.code === 'ENOTFOUND') {
           errorType = 'dns_error';
           solution = 'DNS解析失败，请检查SMTP服务器地址';
-        } else if (error.code === 'ETIMEDOUT') {
+        } else if (nodemailerError.code === 'ETIMEDOUT') {
           errorType = 'timeout';
           solution = '连接超时，可能是网络延迟或防火墙阻止';
-        } else if (error.responseCode === 535) {
+        } else if (nodemailerError.responseCode === 535) {
           errorType = 'auth_failed';
           solution = '认证失败，请检查用户名和密码';
-        } else if (error.message.includes('Certificate')) {
+        } else if (nodemailerError.message.includes('Certificate')) {
           errorType = 'certificate_error';
           solution = 'SSL证书问题，可能需要配置TLS选项';
         }
@@ -129,15 +137,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: false,
           message: 'Vercel环境SMTP连接失败',
-          error: error.message,
+          error: nodemailerError.message,
           errorType,
           solution,
           details: {
             host,
             port,
             user,
-            code: error.code,
-            command: error.command,
+            code: nodemailerError.code,
+            command: nodemailerError.command,
             vercelRegion: process.env.VERCEL_REGION
           },
           troubleshooting: {
@@ -187,14 +195,15 @@ export async function POST(request: NextRequest) {
           }
         });
 
-      } catch (error: any) {
-        console.error('❌ [Vercel] 邮件发送失败:', error);
+      } catch (error) {
+        const emailError = error as Error;
+        console.error('❌ [Vercel] 邮件发送失败:', emailError);
         
         return NextResponse.json({
           success: false,
           message: 'Vercel环境邮件发送失败',
-          error: error.message,
-          stack: error.stack,
+          error: emailError.message,
+          stack: emailError.stack,
           environment: {
             vercelEnv: process.env.VERCEL_ENV,
             vercelRegion: process.env.VERCEL_REGION,
@@ -273,14 +282,15 @@ export async function POST(request: NextRequest) {
       ]
     });
 
-  } catch (error: any) {
-    console.error('❌ [Vercel] API错误:', error);
+  } catch (error) {
+    const apiError = error as Error;
+    console.error('❌ [Vercel] API错误:', apiError);
     return NextResponse.json(
       { 
         success: false, 
         message: 'Vercel调试API错误',
-        error: error.message,
-        stack: error.stack
+        error: apiError.message,
+        stack: apiError.stack
       },
       { status: 500 }
     );

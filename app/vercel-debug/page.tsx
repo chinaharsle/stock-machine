@@ -4,8 +4,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+// 定义调试结果类型
+interface DebugResult {
+  success: boolean;
+  message: string;
+  [key: string]: unknown;
+}
+
 export default function VercelDebugPage() {
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<DebugResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTest, setActiveTest] = useState<string>('');
 

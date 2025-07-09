@@ -41,7 +41,7 @@ const createTransporter = () => {
     },
   };
 
-  const transporterOptions: any = {
+  const transporterOptions = {
     ...config,
     // Vercel环境优化配置
     connectionTimeout: 30000,    // 30秒连接超时
@@ -63,13 +63,15 @@ const createTransporter = () => {
   // 如果是Vercel环境，添加额外的配置
   if (process.env.VERCEL) {
     console.log('🚀 [Vercel环境] 使用优化的邮件配置');
-    transporterOptions.pool = true;           // 启用连接池
-    transporterOptions.maxConnections = 5;    // 最大连接数
-    transporterOptions.rateDelta = 20000;     // 速率限制间隔
-    transporterOptions.rateLimit = 5;         // 速率限制
+    Object.assign(transporterOptions, {
+      pool: true,           // 启用连接池
+      maxConnections: 5,    // 最大连接数
+      rateDelta: 20000,     // 速率限制间隔
+      rateLimit: 5          // 速率限制
+    });
   }
 
-  return nodemailer.createTransport(transporterOptions);
+  return nodemailer.createTransport(transporterOptions as Parameters<typeof nodemailer.createTransport>[0]);
 };
 
 // 获取产品参数信息
