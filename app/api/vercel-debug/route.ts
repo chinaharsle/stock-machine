@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
 
         // 发送测试邮件
         const testResult = await transporter.sendMail({
-          from: 'HARSLE <onboarding@resend.dev>', // 使用Resend的测试域名
+          from: 'HARSLE <notification@harsle.com>', // 使用Resend的测试域名
           to: process.env.NOTIFICATION_EMAIL || 'test@example.com',
           subject: '🎉 Resend邮件测试 - HARSLE',
           html: `
