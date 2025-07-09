@@ -12,11 +12,106 @@ import {
   Banner 
 } from "@/lib/supabase/banners";
 
+// 通知类型
+interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
+
+// 通知组件
+function NotificationContainer({ notifications, onClose }: {
+  notifications: Notification[];
+  onClose: (id: string) => void;
+}) {
+  return (
+    <div className="notification-container">
+      {notifications.map(notification => (
+        <div key={notification.id} className={`notification ${notification.type}`}>
+          <div className="notification-content">
+            <h4>{notification.title}</h4>
+            <p>{notification.message}</p>
+          </div>
+          <button 
+            onClick={() => onClose(notification.id)}
+            className="notification-close"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 确认对话框组件
+function ConfirmDialog({ 
+  isOpen, 
+  title, 
+  message, 
+  onConfirm, 
+  onCancel 
+}: {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content confirm-dialog">
+        <div className="modal-header">
+          <h3>{title}</h3>
+        </div>
+        <div className="confirm-content">
+          <p>{message}</p>
+          <div className="confirm-actions">
+            <button onClick={onConfirm} className="confirm-btn">确认</button>
+            <button onClick={onCancel} className="cancel-btn">取消</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BannerPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  // 通知函数
+  const showNotification = (type: Notification['type'], title: string, message: string) => {
+    const id = Date.now().toString();
+    const notification: Notification = { id, type, title, message };
+    setNotifications(prev => [...prev, notification]);
+    
+    // 3秒后自动关闭
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 3000);
+  };
+
+  const closeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   useEffect(() => {
     fetchBanners();
@@ -29,7 +124,7 @@ export default function BannerPage() {
       setBanners(data);
     } catch (error) {
       console.error('Error fetching banners:', error);
-      alert('获取横幅数据失败');
+      showNotification('error', '获取失败', '无法加载横幅数据，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -59,7 +154,12 @@ export default function BannerPage() {
   const handleSave = async (bannerData: Omit<Banner, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const userId = await getCurrentUserId();
-      const bannerWithUser = { ...bannerData, created_by: userId || undefined };
+      if (!userId) {
+        showNotification('error', '权限错误', '无法获取用户信息，请重新登录');
+        return;
+      }
+
+      const bannerWithUser = { ...bannerData, created_by: userId };
 
       if (selectedBanner && selectedBanner.id) {
         // Update existing banner
@@ -68,18 +168,18 @@ export default function BannerPage() {
           setBanners(banners.map(b => 
             b.id === selectedBanner.id ? updated : b
           ));
-          alert('横幅更新成功');
+          showNotification('success', '更新成功', '横幅已成功更新');
         } else {
-          alert('更新横幅失败');
+          showNotification('error', '更新失败', '更新横幅时发生错误，请重试');
         }
       } else {
         // Create new banner
         const created = await createBanner(bannerWithUser);
         if (created) {
           setBanners([...banners, created]);
-          alert('横幅创建成功');
+          showNotification('success', '创建成功', '新横幅已成功创建');
         } else {
-          alert('创建横幅失败');
+          showNotification('error', '创建失败', '创建横幅时发生错误，请重试');
         }
       }
       
@@ -87,25 +187,35 @@ export default function BannerPage() {
       setSelectedBanner(null);
     } catch (error) {
       console.error('Error saving banner:', error);
-      alert('保存横幅失败');
+      showNotification('error', '保存失败', '保存横幅时发生错误：' + (error instanceof Error ? error.message : '未知错误'));
     }
   };
 
   const handleDelete = async (bannerId: string) => {
-    if (confirm("确定要删除这个横幅吗？")) {
-      try {
-        const success = await deleteBanner(bannerId);
-        if (success) {
-          setBanners(banners.filter(b => b.id !== bannerId));
-          alert('横幅删除成功');
-        } else {
-          alert('删除横幅失败：操作未成功执行');
+    const banner = banners.find(b => b.id === bannerId);
+    if (!banner) return;
+
+    setConfirmDialog({
+      isOpen: true,
+      title: '确认删除',
+      message: `确定要删除横幅 "${banner.title}" 吗？此操作不可恢复。`,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        
+        try {
+          const success = await deleteBanner(bannerId);
+          if (success) {
+            setBanners(banners.filter(b => b.id !== bannerId));
+            showNotification('success', '删除成功', '横幅已成功删除');
+          } else {
+            showNotification('error', '删除失败', '删除横幅时发生错误，可能由于权限限制或数据依赖');
+          }
+        } catch (error) {
+          console.error('Error deleting banner:', error);
+          showNotification('error', '删除失败', '删除横幅时发生错误：' + (error instanceof Error ? error.message : '未知错误'));
         }
-      } catch (error) {
-        console.error('Error deleting banner:', error);
-        alert('删除横幅失败：' + (error instanceof Error ? error.message : '未知错误'));
       }
-    }
+    });
   };
 
   const handleToggleActive = async (bannerId: string) => {
@@ -116,13 +226,16 @@ export default function BannerPage() {
         setBanners(banners.map(b =>
           b.id === bannerId ? updated : b
         ));
+        showNotification('success', '状态更新', `横幅已${updated.is_active ? '启用' : '禁用'}`);
+      } else {
+        showNotification('error', '更新失败', '更新横幅状态时发生错误');
       }
     }
   };
 
   const handleOrderChange = async (bannerId: string, newOrder: number) => {
     if (newOrder <= 0 || newOrder > banners.length) {
-      alert(`排序号必须在1-${banners.length}之间`);
+      showNotification('warning', '排序错误', `排序号必须在1-${banners.length}之间`);
       return;
     }
 
@@ -131,13 +244,13 @@ export default function BannerPage() {
       if (updated) {
         // 重新获取数据以更新排序
         await fetchBanners();
-        alert('排序更新成功');
+        showNotification('success', '排序更新', '横幅排序已成功更新');
       } else {
-        alert('排序更新失败');
+        showNotification('error', '排序失败', '更新横幅排序时发生错误');
       }
     } catch (error) {
       console.error('Error updating banner order:', error);
-      alert('排序更新失败：' + (error instanceof Error ? error.message : '未知错误'));
+      showNotification('error', '排序失败', '更新横幅排序时发生错误：' + (error instanceof Error ? error.message : '未知错误'));
     }
   };
 
@@ -155,6 +268,16 @@ export default function BannerPage() {
 
   return (
     <div className="banner-page">
+      <NotificationContainer notifications={notifications} onClose={closeNotification} />
+      
+      <ConfirmDialog 
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <section className="section-header">
         <h2>横幅管理</h2>
         <p>管理首页轮播横幅内容</p>

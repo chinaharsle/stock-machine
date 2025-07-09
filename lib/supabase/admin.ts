@@ -47,14 +47,18 @@ function logError(context: string, error: unknown) {
 export async function hasAdminUsers(): Promise<boolean> {
   try {
     const supabase = createAdminClient(); // Use admin client to bypass RLS
-    const { data, error } = await supabase.rpc('has_admin_users');
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('is_admin', true)
+      .limit(1);
     
     if (error) {
       logError('hasAdminUsers', error);
       return false;
     }
     
-    return data === true;
+    return data && data.length > 0;
   } catch (err) {
     console.error('❌ Unexpected error checking admin users existence:', err);
     return false;
@@ -62,18 +66,28 @@ export async function hasAdminUsers(): Promise<boolean> {
 }
 
 /**
- * Bootstrap the first admin user using the secure function
+ * Bootstrap the first admin user using direct database operations
  */
 export async function bootstrapFirstAdmin(userAuth: { id: string; email: string; user_metadata?: { full_name?: string } }): Promise<AdminUser | null> {
   try {
     console.log('🚀 Bootstrapping first admin user:', { userId: userAuth.id, email: userAuth.email });
     const supabase = createAdminClient(); // Use admin client to bypass RLS
     
-    const { data, error } = await supabase.rpc('bootstrap_first_admin', {
-      p_user_id: userAuth.id,
-      p_email: userAuth.email,
-      p_name: userAuth.user_metadata?.full_name || userAuth.email?.split('@')[0]
-    });
+    const userData = {
+      user_id: userAuth.id,
+      email: userAuth.email,
+      name: userAuth.user_metadata?.full_name || userAuth.email?.split('@')[0],
+      is_admin: true,
+      last_login: new Date().toISOString()
+    };
+    
+    const { data, error } = await supabase
+      .from('admin_users')
+      .upsert(userData, {
+        onConflict: 'user_id'
+      })
+      .select()
+      .single();
     
     if (error) {
       logError('bootstrapFirstAdmin', error);
@@ -81,7 +95,7 @@ export async function bootstrapFirstAdmin(userAuth: { id: string; email: string;
     }
     
     console.log('✅ First admin user bootstrapped successfully:', data);
-    return data?.[0] as AdminUser;
+    return data as AdminUser;
   } catch (err) {
     console.error('❌ Unexpected error bootstrapping first admin user:', err);
     return null;

@@ -31,7 +31,7 @@ export default function AccountPage() {
   // Mock user data - in real app, this would come from Supabase auth
   const [userProfile, setUserProfile] = useState<UserProfile>({
     id: '1',
-    email: 'admin@harsle.com',
+    email: 'jimmy@harsle.com',
     name: '管理员',
     role: 'admin',
     lastLogin: '2024-01-15 10:30:00',
@@ -42,6 +42,13 @@ export default function AccountPage() {
     name: userProfile.name || '',
     email: userProfile.email
   });
+
+  const [emailChangeForm, setEmailChangeForm] = useState({
+    newEmail: '',
+    password: ''
+  });
+
+  const [isEmailChangeModalOpen, setIsEmailChangeModalOpen] = useState(false);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +64,48 @@ export default function AccountPage() {
     } catch (error) {
       console.error('Profile update error:', error);
       alert('更新失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // 验证邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailChangeForm.newEmail)) {
+        alert('请输入有效的邮箱地址');
+        return;
+      }
+
+      // 这里应该调用 Supabase 的邮箱更新API
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({
+        email: emailChangeForm.newEmail
+      });
+
+      if (error) throw error;
+
+      // 更新本地状态
+      setUserProfile({
+        ...userProfile,
+        email: emailChangeForm.newEmail
+      });
+      
+      setProfileForm({
+        ...profileForm,
+        email: emailChangeForm.newEmail
+      });
+
+      setIsEmailChangeModalOpen(false);
+      setEmailChangeForm({ newEmail: '', password: '' });
+      alert('邮箱已成功更新，请检查新邮箱中的验证邮件');
+    } catch (error) {
+      console.error('Email change error:', error);
+      alert('邮箱更新失败：' + (error instanceof Error ? error.message : '请重试'));
     } finally {
       setIsLoading(false);
     }
@@ -176,13 +225,22 @@ export default function AccountPage() {
 
                 <div className="form-group">
                   <label>邮箱地址</label>
-                  <input
-                    type="email"
-                    value={profileForm.email}
-                    disabled
-                    className="readonly-input"
-                  />
-                  <small>邮箱地址无法修改</small>
+                  <div className="email-input-group">
+                    <input
+                      type="email"
+                      value={profileForm.email}
+                      disabled
+                      className="readonly-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsEmailChangeModalOpen(true)}
+                      className="change-email-btn"
+                    >
+                      修改邮箱
+                    </button>
+                  </div>
+                  <small>点击"修改邮箱"按钮来更改邮箱地址</small>
                 </div>
 
                 <div className="form-group">
@@ -397,6 +455,80 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Email Change Modal */}
+      {isEmailChangeModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>修改邮箱地址</h3>
+              <button 
+                onClick={() => setIsEmailChangeModalOpen(false)}
+                className="close-btn"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleEmailChange} className="email-change-form">
+              <div className="form-group">
+                <label>当前邮箱地址</label>
+                <input
+                  type="email"
+                  value={userProfile.email}
+                  disabled
+                  className="readonly-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>新邮箱地址</label>
+                <input
+                  type="email"
+                  value={emailChangeForm.newEmail}
+                  onChange={(e) => setEmailChangeForm({
+                    ...emailChangeForm,
+                    newEmail: e.target.value
+                  })}
+                  placeholder="输入新的邮箱地址"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>确认密码</label>
+                <input
+                  type="password"
+                  value={emailChangeForm.password}
+                  onChange={(e) => setEmailChangeForm({
+                    ...emailChangeForm,
+                    password: e.target.value
+                  })}
+                  placeholder="输入当前密码以确认更改"
+                  required
+                />
+                <small>出于安全考虑，需要输入当前密码确认身份</small>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="update-btn"
+                >
+                  {isLoading ? '更新中...' : '确认修改'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEmailChangeModalOpen(false)}
+                  className="cancel-btn"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

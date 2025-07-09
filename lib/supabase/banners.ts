@@ -14,6 +14,75 @@ export interface Banner {
 }
 
 /**
+ * Helper function to safely log errors with detailed information
+ */
+function logBannerError(context: string, error: unknown) {
+  // Skip logging for empty errors
+  if (!error || (typeof error === 'object' && Object.keys(error).length === 0)) {
+    console.log(`${context}: Empty error object - operation may have failed silently`);
+    return;
+  }
+
+  const errorObj = error as Record<string, unknown>;
+  const errorInfo = {
+    fullError: error,
+    code: errorObj?.code || 'N/A',
+    message: errorObj?.message || 'N/A',
+    details: errorObj?.details || 'N/A',
+    hint: errorObj?.hint || 'N/A',
+    status: errorObj?.status || 'N/A',
+    statusCode: errorObj?.statusCode || 'N/A'
+  };
+
+  // Only log if we have meaningful error information
+  const hasRealError = errorInfo.code !== 'N/A' || errorInfo.message !== 'N/A' || errorInfo.details !== 'N/A';
+  
+  if (hasRealError) {
+    console.error(`Error in ${context}:`, errorInfo);
+  } else {
+    console.log(`${context}: No detailed error information available`);
+  }
+}
+
+/**
+ * Check if current user is admin (simplified version for client-side)
+ */
+async function isCurrentUserAdmin(): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Failed to get current user:', userError);
+      return false;
+    }
+
+    // Try to check admin status - this may fail due to RLS
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('is_admin')
+      .eq('user_id', user.id)
+      .eq('is_admin', true)
+      .single();
+
+    if (error) {
+      // If no record found or RLS blocked, assume not admin
+      if (error.code === 'PGRST116') {
+        console.log('No admin record found for user');
+        return false;
+      }
+      // RLS might block this query, so we'll rely on server-side checks
+      return false;
+    }
+
+    return data?.is_admin || false;
+  } catch (err) {
+    console.error('Unexpected error checking admin status:', err);
+    return false;
+  }
+}
+
+/**
  * Get all banners
  */
 export async function getAllBanners(): Promise<Banner[]> {
@@ -25,7 +94,7 @@ export async function getAllBanners(): Promise<Banner[]> {
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching banners:', error);
+    logBannerError('getAllBanners', error);
     return [];
   }
 
@@ -45,7 +114,7 @@ export async function getActiveBanners(): Promise<Banner[]> {
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching active banners:', error);
+    logBannerError('getActiveBanners', error);
     return [];
   }
 
@@ -56,6 +125,13 @@ export async function getActiveBanners(): Promise<Banner[]> {
  * Create a new banner
  */
 export async function createBanner(banner: Omit<Banner, 'id' | 'created_at' | 'updated_at'>): Promise<Banner | null> {
+  // Check admin permission first
+  const isAdmin = await isCurrentUserAdmin();
+  if (!isAdmin) {
+    console.error('创建横幅失败：用户没有管理员权限');
+    return null;
+  }
+
   const supabase = createClient();
   
   const { data, error } = await supabase
@@ -65,7 +141,7 @@ export async function createBanner(banner: Omit<Banner, 'id' | 'created_at' | 'u
     .single();
 
   if (error) {
-    console.error('Error creating banner:', error);
+    logBannerError('createBanner', error);
     return null;
   }
 
@@ -76,6 +152,13 @@ export async function createBanner(banner: Omit<Banner, 'id' | 'created_at' | 'u
  * Update a banner
  */
 export async function updateBanner(id: string, updates: Partial<Banner>): Promise<Banner | null> {
+  // Check admin permission first
+  const isAdmin = await isCurrentUserAdmin();
+  if (!isAdmin) {
+    console.error('更新横幅失败：用户没有管理员权限');
+    return null;
+  }
+
   const supabase = createClient();
   
   const { data, error } = await supabase
@@ -86,7 +169,7 @@ export async function updateBanner(id: string, updates: Partial<Banner>): Promis
     .single();
 
   if (error) {
-    console.error('Error updating banner:', error);
+    logBannerError('updateBanner', error);
     return null;
   }
 
@@ -94,22 +177,32 @@ export async function updateBanner(id: string, updates: Partial<Banner>): Promis
 }
 
 /**
- * Delete a banner
+ * Delete a banner using server-side API
  */
 export async function deleteBanner(id: string): Promise<boolean> {
-  const supabase = createClient();
-  
-  const { error } = await supabase
-    .from('banners')
-    .delete()
-    .eq('id', id);
+  try {
+    console.log('开始删除横幅，ID:', id);
+    
+    const response = await fetch(`/api/banners/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
-  if (error) {
-    console.error('Error deleting banner:', error);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('删除横幅失败:', errorData.error);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log('横幅删除成功:', result.message);
+    return true;
+  } catch (err) {
+    console.error('删除横幅时发生意外错误:', err);
     return false;
   }
-
-  return true;
 }
 
 /**
@@ -126,7 +219,7 @@ export async function uploadBannerImage(file: File, userId: string): Promise<str
     .upload(path, file);
 
   if (error) {
-    console.error('Error uploading banner image:', error);
+    logBannerError('uploadBannerImage', error);
     return null;
   }
 

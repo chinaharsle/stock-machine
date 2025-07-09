@@ -19,29 +19,75 @@ export interface Machine {
 }
 
 // 通知类型
-type NotificationType = 'success' | 'error' | 'info';
+interface NotificationItem {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
 
 // 通知组件
-function Notification({ 
-  message, 
-  type, 
-  onClose 
-}: { 
-  message: string; 
-  type: NotificationType; 
-  onClose: () => void; 
+function NotificationContainer({ notifications, onClose }: {
+  notifications: NotificationItem[];
+  onClose: (id: string) => void;
 }) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+  return (
+    <div className="notification-container">
+      {notifications.map(notification => (
+        <div key={notification.id} className={`notification ${notification.type}`}>
+          <div className="notification-content">
+            <h4>{notification.title}</h4>
+            <p>{notification.message}</p>
+          </div>
+          <button 
+            onClick={() => onClose(notification.id)}
+            className="notification-close"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 确认对话框组件
+function ConfirmDialog({ 
+  isOpen, 
+  title, 
+  message, 
+  type = 'default',
+  onConfirm, 
+  onCancel 
+}: {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type?: 'default' | 'danger';
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!isOpen) return null;
 
   return (
-    <div className={`notification ${type}`}>
-      <span>{message}</span>
-      <button onClick={onClose} className="notification-close">×</button>
+    <div className="modal-overlay">
+      <div className="modal-content confirm-dialog">
+        <div className="modal-header">
+          <h3>{title}</h3>
+        </div>
+        <div className="confirm-content">
+          <p>{message}</p>
+          <div className="confirm-actions">
+            <button 
+              onClick={onConfirm} 
+              className={`confirm-btn ${type === 'danger' ? 'danger' : ''}`}
+            >
+              确认
+            </button>
+            <button onClick={onCancel} className="cancel-btn">取消</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -52,17 +98,37 @@ export default function MachinesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState<{
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
     message: string;
-    type: NotificationType;
-  } | null>(null);
+    type?: 'default' | 'danger';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     fetchMachines();
   }, []);
 
-  const showNotification = (message: string, type: NotificationType) => {
-    setNotification({ message, type });
+  const showNotification = (type: NotificationItem['type'], title: string, message: string) => {
+    const id = Date.now().toString();
+    const notification: NotificationItem = { id, type, title, message };
+    setNotifications(prev => [...prev, notification]);
+    
+    // 4秒后自动关闭
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
+  const closeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const fetchMachines = async () => {
@@ -74,11 +140,11 @@ export default function MachinesPage() {
       if (result.success) {
         setMachines(result.data);
       } else {
-        showNotification(result.error || '获取机器数据失败', 'error');
+        showNotification('error', '获取数据失败', result.error || '获取机器数据失败');
       }
     } catch (error) {
       console.error('Error fetching machines:', error);
-      showNotification('获取机器数据失败', 'error');
+      showNotification('error', '获取数据失败', '获取机器数据失败');
     } finally {
       setLoading(false);
     }
@@ -94,24 +160,31 @@ export default function MachinesPage() {
   };
 
   const handleDelete = async (machineId: string) => {
-    if (confirm("确定要删除这台机器吗？")) {
-      try {
-        const response = await fetch(`/api/admin/machines?id=${machineId}`, {
-          method: 'DELETE'
-        });
-        const result = await response.json();
-        
-        if (result.success) {
-          setMachines(machines.filter(m => m.id !== machineId));
-          showNotification('机器删除成功', 'success');
-        } else {
-          showNotification(result.error || '删除机器失败', 'error');
+    setConfirmDialog({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这台机器吗？此操作不可撤销。',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/admin/machines?id=${machineId}`, {
+            method: 'DELETE'
+          });
+          const result = await response.json();
+          
+          if (result.success) {
+            setMachines(machines.filter(m => m.id !== machineId));
+            showNotification('success', '删除成功', '机器已成功删除');
+          } else {
+            showNotification('error', '删除失败', result.error || '删除机器失败');
+          }
+        } catch (error) {
+          console.error('Error deleting machine:', error);
+          showNotification('error', '删除失败', '删除机器失败');
         }
-      } catch (error) {
-        console.error('Error deleting machine:', error);
-        showNotification('删除机器失败', 'error');
+        setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => {} });
       }
-    }
+    });
   };
 
   const handleSave = async (machineData: Omit<Machine, 'id' | 'created_at' | 'updated_at'>) => {
@@ -138,27 +211,27 @@ export default function MachinesPage() {
           setMachines(machines.map(m => 
             m.id === selectedMachine.id ? result.data : m
           ));
-          showNotification('机器更新成功', 'success');
+          showNotification('success', '更新成功', '机器更新成功');
         } else {
           // 重新获取数据以保持正确的排序
           await fetchMachines();
-          showNotification('机器创建成功', 'success');
+          showNotification('success', '创建成功', '机器创建成功');
         }
         
         setIsModalOpen(false);
         setSelectedMachine(null);
       } else {
-        showNotification(result.error || '保存机器失败', 'error');
+        showNotification('error', '保存失败', result.error || '保存机器失败');
       }
     } catch (error: unknown) {
       console.error('Error saving machine:', error);
-      showNotification('保存机器失败', 'error');
+      showNotification('error', '保存失败', '保存机器失败');
     }
   };
 
   const handleSortOrderChange = async (machineId: string, newOrder: number) => {
     if (newOrder <= 0) {
-      showNotification('排序号必须大于0', 'error');
+      showNotification('error', '排序无效', '排序号必须大于0');
       return;
     }
 
@@ -176,13 +249,13 @@ export default function MachinesPage() {
       if (result.success) {
         // 重新获取数据以刷新排序
         await fetchMachines();
-        showNotification('排序更新成功', 'success');
+        showNotification('success', '排序更新', '排序更新成功');
       } else {
-        showNotification(result.error || '排序更新失败', 'error');
+        showNotification('error', '排序失败', result.error || '排序更新失败');
       }
     } catch (error) {
       console.error('Error updating sort order:', error);
-      showNotification('排序更新失败', 'error');
+      showNotification('error', '排序失败', '排序更新失败');
     }
   };
 
@@ -216,14 +289,21 @@ export default function MachinesPage() {
 
   return (
     <div className="machines-page">
-      {/* 通知显示 */}
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
-      )}
+      {/* 通知容器 */}
+      <NotificationContainer 
+        notifications={notifications}
+        onClose={closeNotification}
+      />
+
+      {/* 确认对话框 */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => {} })}
+      />
 
       <section className="section-header">
         <h2>机器管理</h2>
