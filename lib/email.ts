@@ -41,7 +41,35 @@ const createTransporter = () => {
     },
   };
 
-  return nodemailer.createTransport(config);
+  const transporterOptions: any = {
+    ...config,
+    // Vercel环境优化配置
+    connectionTimeout: 30000,    // 30秒连接超时
+    greetingTimeout: 15000,      // 15秒握手超时
+    socketTimeout: 30000,        // 30秒socket超时
+    // 调试选项（仅在开发环境启用）
+    debug: process.env.NODE_ENV === 'development',
+    logger: process.env.NODE_ENV === 'development',
+    // TLS配置
+    requireTLS: true,
+    tls: {
+      // 允许自签名证书（在某些环境中可能需要）
+      rejectUnauthorized: false,
+      // 最低TLS版本
+      minVersion: 'TLSv1.2'
+    }
+  };
+
+  // 如果是Vercel环境，添加额外的配置
+  if (process.env.VERCEL) {
+    console.log('🚀 [Vercel环境] 使用优化的邮件配置');
+    transporterOptions.pool = true;           // 启用连接池
+    transporterOptions.maxConnections = 5;    // 最大连接数
+    transporterOptions.rateDelta = 20000;     // 速率限制间隔
+    transporterOptions.rateLimit = 5;         // 速率限制
+  }
+
+  return nodemailer.createTransport(transporterOptions);
 };
 
 // 获取产品参数信息
