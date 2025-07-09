@@ -10,19 +10,45 @@ import { createClient } from '@/lib/supabase/server';
 // GET: 获取所有机器
 export async function GET() {
   try {
+    console.log('🔍 [GET /api/admin/machines] 开始处理请求...');
+    
     // 验证用户是否登录
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    console.log('✅ [GET /api/admin/machines] Supabase客户端创建成功');
     
-    if (!user) {
-      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('🔐 [GET /api/admin/machines] 认证检查:', { hasUser: !!user, authError: authError?.message });
+    
+    if (authError) {
+      console.error('❌ [GET /api/admin/machines] 认证错误:', authError);
+      return NextResponse.json({ 
+        success: false, 
+        error: '认证失败', 
+        details: authError.message 
+      }, { status: 401 });
     }
     
+    if (!user) {
+      console.warn('⚠️ [GET /api/admin/machines] 用户未登录');
+      return NextResponse.json({ 
+        success: false, 
+        error: '未授权访问，请先登录' 
+      }, { status: 401 });
+    }
+    
+    console.log('👤 [GET /api/admin/machines] 用户已认证:', user.email);
+    
     const machines = await getAllMachinesAdmin();
+    console.log('✅ [GET /api/admin/machines] 获取到机器数据:', machines.length, '台');
+    
     return NextResponse.json({ success: true, data: machines });
   } catch (error) {
-    console.error('Error in GET /api/admin/machines:', error);
-    return NextResponse.json({ error: '获取机器数据失败' }, { status: 500 });
+    console.error('❌ [GET /api/admin/machines] 服务器错误:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: '获取机器数据失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }, { status: 500 });
   }
 }
 

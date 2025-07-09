@@ -138,6 +138,46 @@ const generateInquiryEmailTemplate = (data: InquiryData): string => {
     minute: '2-digit'
   });
 
+  // 转换产品参数名称为友好显示格式
+  const formatParameterName = (camelCaseKey: string): string => {
+    // 特定参数名称映射
+    const parameterNameMap: { [key: string]: string } = {
+      'bendingLength': 'Bending Length',
+      'bendingTonnage': 'Bending Tonnage',
+      'operatingSystem': 'Operating System',
+      'backgaugeAxis': 'Backgauge Axis',
+      'strokeLength': 'Stroke Length',
+      'openingHeight': 'Opening Height',
+      'workingSpeed': 'Working Speed',
+      'returnSpeed': 'Return Speed',
+      'motorPower': 'Motor Power',
+      'oilTankCapacity': 'Oil Tank Capacity',
+      'machineWeight': 'Machine Weight',
+      'machineDimensions': 'Machine Dimensions',
+      'workingPressure': 'Working Pressure',
+      'cncSystem': 'CNC System',
+      'controlSystem': 'Control System',
+      'hydraulicSystem': 'Hydraulic System',
+      'electricalSystem': 'Electrical System',
+      'toolingSystem': 'Tooling System',
+      'safetySystem': 'Safety System'
+    };
+
+    // 如果有特定映射，使用映射
+    if (parameterNameMap[camelCaseKey]) {
+      return parameterNameMap[camelCaseKey];
+    }
+
+    // 通用转换：驼峰命名法转为标题格式
+    return camelCaseKey
+      // 在大写字母前添加空格
+      .replace(/([A-Z])/g, ' $1')
+      // 首字母大写
+      .replace(/^./, str => str.toUpperCase())
+      // 清理多余空格
+      .trim();
+  };
+
   // 生成产品参数HTML
   const generateProductSpecsHTML = (specs: ProductSpecifications): string => {
     if (!specs || Object.keys(specs).length === 0) {
@@ -147,7 +187,7 @@ const generateInquiryEmailTemplate = (data: InquiryData): string => {
     return Object.entries(specs)
       .map(([key, value]) => `
         <div class="spec-item">
-          <span class="spec-label">${key}:</span>
+          <span class="spec-label">${formatParameterName(key)}:</span>
           <span class="spec-value">${value}</span>
         </div>
       `)

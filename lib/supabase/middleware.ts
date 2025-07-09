@@ -67,7 +67,19 @@ export async function updateSession(request: NextRequest) {
     !isPublicRoute &&
     !user
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // 如果是API路由，返回JSON错误而不是重定向
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "未授权访问", 
+          message: "请先登录" 
+        },
+        { status: 401 }
+      );
+    }
+    
+    // 对于页面路由，重定向到登录页面
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
