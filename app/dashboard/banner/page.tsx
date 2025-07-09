@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   getAllBanners, 
   createBanner, 
@@ -113,11 +113,7 @@ export default function BannerPage() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  useEffect(() => {
-    fetchBanners();
-  }, []);
-
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getAllBanners();
@@ -128,7 +124,11 @@ export default function BannerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleEdit = (banner: Banner) => {
     setSelectedBanner(banner);

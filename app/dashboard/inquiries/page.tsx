@@ -180,15 +180,7 @@ export default function InquiriesPage() {
     return statusMap[status as keyof typeof statusMap] || { text: status, class: "" };
   };
 
-  const formatSpecificationLabel = (key: string): string => {
-    const labelMap: Record<string, string> = {
-      bendingTonnage: "Bending Tonnage",
-      bendingLength: "Bending Length",
-      operatingSystem: "Operating System",
-      backgaugeAxis: "Backgauge Axis"
-    };
-    return labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
-  };
+
 
   const handleStatusChange = async (inquiryId: string, newStatus: string) => {
     try {

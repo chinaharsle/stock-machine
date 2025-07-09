@@ -49,9 +49,10 @@ async function isCurrentUserAdmin(): Promise<boolean> {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const bannerId = params.id;
+    const resolvedParams = await params;
+    const bannerId = resolvedParams.id;
     
     if (!bannerId) {
       return NextResponse.json({ error: 'Banner ID is required' }, { status: 400 });

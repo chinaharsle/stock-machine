@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MediaLibrary from "@/components/media-library";
 import "./machines.css";
 
@@ -112,10 +112,6 @@ export default function MachinesPage() {
     onConfirm: () => {}
   });
 
-  useEffect(() => {
-    fetchMachines();
-  }, []);
-
   const showNotification = (type: NotificationItem['type'], title: string, message: string) => {
     const id = Date.now().toString();
     const notification: NotificationItem = { id, type, title, message };
@@ -131,7 +127,7 @@ export default function MachinesPage() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const fetchMachines = async () => {
+  const fetchMachines = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/admin/machines');
@@ -148,7 +144,11 @@ export default function MachinesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchMachines();
+  }, [fetchMachines]);
 
   const filteredMachines = machines.filter(machine =>
     machine.model.toLowerCase().includes(searchTerm.toLowerCase())

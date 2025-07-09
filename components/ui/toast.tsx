@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -10,19 +10,8 @@ interface ToastProps {
 }
 
 export function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, duration);
-    
-    // 如果是成功提示，添加撒花效果
-    if (type === 'success') {
-      createConfetti();
-    }
-    
-    return () => clearTimeout(timer);
-  }, [onClose, duration, type]);
-
   // 创建撒花效果
-  const createConfetti = () => {
+  const createConfetti = useCallback(() => {
     const confettiContainer = document.createElement('div');
     confettiContainer.className = 'confetti-container';
     document.body.appendChild(confettiContainer);
@@ -42,7 +31,18 @@ export function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
     setTimeout(() => {
       confettiContainer.remove();
     }, 3000);
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(onClose, duration);
+    
+    // 如果是成功提示，添加撒花效果
+    if (type === 'success') {
+      createConfetti();
+    }
+    
+    return () => clearTimeout(timer);
+  }, [onClose, duration, type, createConfetti]);
 
   const getRandomColor = () => {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe', '#fd79a8', '#e17055'];

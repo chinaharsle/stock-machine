@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface MediaFile {
   id: string;
@@ -33,11 +33,7 @@ export default function MediaLibrary({
     new Set(selectedFiles.map(f => f.id))
   );
 
-  useEffect(() => {
-    fetchFiles();
-  }, [type]);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -54,7 +50,11 @@ export default function MediaLibrary({
     } finally {
       setLoading(false);
     }
-  };
+  }, [type]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const handleFileSelect = (file: MediaFile) => {
     if (multiple) {

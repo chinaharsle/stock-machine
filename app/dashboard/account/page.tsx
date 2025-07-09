@@ -240,7 +240,7 @@ export default function AccountPage() {
                       修改邮箱
                     </button>
                   </div>
-                  <small>点击"修改邮箱"按钮来更改邮箱地址</small>
+                  <small>点击&quot;修改邮箱&quot;按钮来更改邮箱地址</small>
                 </div>
 
                 <div className="form-group">
