@@ -38,15 +38,57 @@ export default function MediaLibrary({
     setError(null);
     
     try {
-      const response = await fetch(`/api/admin/media?type=${type}&limit=100`);
+      console.log('🔍 MediaLibrary: 开始获取文件列表，类型:', type);
+      console.log('🔍 MediaLibrary: 当前URL:', window.location.href);
+      console.log('🔍 MediaLibrary: 检查cookies:', document.cookie);
+      
+      const response = await fetch(`/api/admin/media?type=${type}&limit=100`, {
+        method: 'GET',
+        credentials: 'include', // 确保包含cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('📡 MediaLibrary: API响应状态:', response.status, response.statusText);
+      console.log('📡 MediaLibrary: API响应头:', Object.fromEntries(response.headers));
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch files');
+        const errorData = await response.json().catch(() => null);
+        console.error('❌ MediaLibrary: API响应错误:', errorData);
+        
+        if (response.status === 401) {
+          throw new Error('用户未登录或认证已过期，请重新登录后台管理系统');
+        } else if (response.status === 403) {
+          throw new Error('没有权限访问媒体库');
+        } else if (response.status === 500) {
+          throw new Error('服务器内部错误，请稍后再试');
+        } else {
+          throw new Error(errorData?.error || errorData?.message || `请求失败 (状态码: ${response.status})`);
+        }
       }
       
       const data = await response.json();
+      console.log('✅ MediaLibrary: 获取到数据:', data);
+      console.log('📊 MediaLibrary: 文件数量:', data.files?.length || 0);
+      
+      // 检查响应是否成功
+      if (data.success === false) {
+        throw new Error(data.error || data.message || '获取文件失败');
+      }
+      
       setFiles(data.files || []);
+      
+      if (data.files && data.files.length > 0) {
+        console.log('🖼️ MediaLibrary: 第一个文件示例:', data.files[0]);
+        console.log('🖼️ MediaLibrary: 所有文件:', data.files);
+      } else {
+        console.log('⚠️ MediaLibrary: 没有找到文件');
+      }
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load files');
+      console.error('❌ MediaLibrary: 获取文件失败:', err);
+      setError(err instanceof Error ? err.message : '获取文件列表失败');
     } finally {
       setLoading(false);
     }
@@ -119,7 +161,24 @@ export default function MediaLibrary({
             <h3>选择{getTypeLabel(type)}</h3>
             <button onClick={onClose} className="close-btn">×</button>
           </div>
-          <div className="error-message">{error}</div>
+          <div className="error-message">
+            <p>{error}</p>
+            <button 
+              onClick={fetchFiles}
+              className="retry-btn"
+              style={{
+                marginTop: '10px',
+                padding: '8px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              重试
+            </button>
+          </div>
         </div>
       </div>
     );

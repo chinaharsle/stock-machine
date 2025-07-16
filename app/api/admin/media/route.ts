@@ -17,8 +17,15 @@ export async function GET(request: NextRequest) {
     // 检查用户认证
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('❌ [Media API] 用户认证失败:', authError);
+      return NextResponse.json({ 
+        success: false, 
+        error: '用户未登录或认证已过期，请重新登录',
+        message: '请先登录后台管理系统' 
+      }, { status: 401 });
     }
+    
+    console.log('✅ [Media API] 用户认证成功:', user.email);
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'image' | 'drawing' | 'attachment'
@@ -108,7 +115,14 @@ export async function GET(request: NextRequest) {
     // 应用分页
     const paginatedFiles = mediaFiles.slice(offset, offset + limit);
 
+    console.log('📊 [Media API] 返回数据:', {
+      filesCount: paginatedFiles.length,
+      totalCount: mediaFiles.length,
+      hasMore: offset + limit < mediaFiles.length
+    });
+
     return NextResponse.json({
+      success: true,
       files: paginatedFiles,
       total: mediaFiles.length,
       hasMore: offset + limit < mediaFiles.length
